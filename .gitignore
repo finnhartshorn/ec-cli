@@ -1,0 +1,10 @@
+/target
+Cargo.lock
+
+# Downloaded puzzle files
+202*/inputs/
+202*/descriptions/
+202*/samples/
+
+# Cookie file
+.everybodycodes.cookie
