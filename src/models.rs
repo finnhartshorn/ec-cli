@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct User {
@@ -6,19 +7,47 @@ pub struct User {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct EncryptedContent {
+    #[serde(rename = "1")]
+    pub part1: Option<String>,
+    #[serde(rename = "2")]
+    pub part2: Option<String>,
+    #[serde(rename = "3")]
+    pub part3: Option<String>,
+}
+
+impl EncryptedContent {
+    pub fn get_part(&self, part: i32) -> Result<&str, String> {
+        match part {
+            1 => self.part1.as_deref()
+                .ok_or_else(|| "Part 1 not available".to_string()),
+            2 => self.part2.as_deref()
+                .ok_or_else(|| "Part 2 not available".to_string()),
+            3 => self.part3.as_deref()
+                .ok_or_else(|| "Part 3 not available".to_string()),
+            _ => Err(format!("Invalid part: {}", part)),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct QuestKeys {
     pub key1: String,
-    pub key2: String,
-    pub key3: String,
+    #[serde(default)]
+    pub key2: Option<String>,
+    #[serde(default)]
+    pub key3: Option<String>,
 }
 
 impl QuestKeys {
-    pub fn get_key(&self, part: i32) -> &str {
+    pub fn get_key(&self, part: i32) -> Result<&str, String> {
         match part {
-            1 => &self.key1,
-            2 => &self.key2,
-            3 => &self.key3,
-            _ => &self.key1,
+            1 => Ok(&self.key1),
+            2 => self.key2.as_deref()
+                .ok_or_else(|| "Part 2 key not available yet".to_string()),
+            3 => self.key3.as_deref()
+                .ok_or_else(|| "Part 3 key not available yet".to_string()),
+            _ => Ok(&self.key1),
         }
     }
 }

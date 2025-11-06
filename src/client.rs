@@ -90,7 +90,10 @@ impl EcClient {
             });
         }
 
-        let user: User = response.json().await?;
+        let body = response.text().await?;
+        debug!("User API response: {}", body);
+
+        let user: User = serde_json::from_str(&body)?;
         self.user_seed = Some(user.seed);
         debug!("User seed: {}", user.seed);
 
@@ -108,14 +111,20 @@ impl EcClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() {
             return Err(EcError::HttpError {
-                status: response.status().as_u16(),
-                message: format!("Failed to fetch quest keys: {}", response.status()),
+                status: status.as_u16(),
+                message: format!("Failed to fetch quest keys: {}", status),
             });
         }
 
-        let keys: QuestKeys = response.json().await?;
+        // Get response text first for better error messages
+        let body = response.text().await?;
+        debug!("Quest keys response: {}", body);
+
+        let keys: QuestKeys = serde_json::from_str(&body)
+            .map_err(|e| EcError::JsonError(e))?;
         debug!("Fetched quest keys for {}/{}", year, day);
 
         Ok(keys)
@@ -125,10 +134,12 @@ impl EcClient {
     pub async fn fetch_input(&mut self, year: i32, day: i32, part: i32) -> Result<String> {
         let seed = self.get_user_seed().await?;
         let keys = self.fetch_quest_keys(year, day).await?;
-        let key = keys.get_key(part);
+        let key = keys.get_key(part)
+            .map_err(|e| EcError::DecryptionError(e))?;
 
         info!("Downloading encrypted input for {}/{} part {}...", year, day, part);
         let url = format!("{}/assets/{}/{}/input/{}.json", CDN_URL, year, day, seed);
+        debug!("Fetching input from URL: {}", url);
 
         let response = self.client
             .get(&url)
@@ -142,10 +153,25 @@ impl EcClient {
             });
         }
 
-        let encrypted = response.text().await?;
+        let body = response.text().await?;
+        debug!("Input response (first 100 chars): {}", &body.chars().take(100).collect::<String>());
 
         info!("Decrypting input...");
-        let decrypted = decrypt_aes_cbc(&encrypted.trim_matches('"'), key)?;
+
+        // Parse as JSON to get the encrypted string
+        let encrypted = if body.starts_with('{') {
+            // New format: JSON object
+            let encrypted_parts: serde_json::Value = serde_json::from_str(&body)?;
+            encrypted_parts[&part.to_string()]
+                .as_str()
+                .ok_or_else(|| EcError::DecryptionError(format!("Missing part {} in input", part)))?
+                .to_string()
+        } else {
+            // Old format: plain string (with quotes)
+            body.trim_matches('"').to_string()
+        };
+
+        let decrypted = decrypt_aes_cbc(&encrypted, key)?;
 
         Ok(decrypted)
     }
@@ -170,10 +196,20 @@ impl EcClient {
             });
         }
 
-        let encrypted = response.text().await?;
+        let body = response.text().await?;
+        debug!("Encrypted description (first 100 chars): {}", &body.chars().take(100).collect::<String>());
 
         info!("Decrypting description...");
-        let decrypted = decrypt_aes_cbc(&encrypted.trim_matches('"'), key)?;
+
+        // Parse as JSON object with parts "1", "2", "3"
+        let encrypted_parts: serde_json::Value = serde_json::from_str(&body)?;
+
+        // Get part 1 (description should be same for all parts)
+        let encrypted = encrypted_parts["1"]
+            .as_str()
+            .ok_or_else(|| EcError::DecryptionError("Missing part 1 in description".to_string()))?;
+
+        let decrypted = decrypt_aes_cbc(encrypted, key)?;
 
         Ok(decrypted)
     }
