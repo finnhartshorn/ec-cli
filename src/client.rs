@@ -33,6 +33,11 @@ impl EcClient {
         })
     }
 
+    /// Format cookie for HTTP header
+    fn cookie_header(&self) -> String {
+        format!("everybody-codes={}", &self.cookie)
+    }
+
     /// Load cookie from environment variable or file
     fn load_cookie() -> Result<String> {
         // Try environment variable first
@@ -79,7 +84,7 @@ impl EcClient {
 
         let response = self.client
             .get(&url)
-            .header("Cookie", &self.cookie)
+            .header("Cookie", &self.cookie_header())
             .send()
             .await?;
 
@@ -107,7 +112,7 @@ impl EcClient {
 
         let response = self.client
             .get(&url)
-            .header("Cookie", &self.cookie)
+            .header("Cookie", &self.cookie_header())
             .send()
             .await?;
 
@@ -234,7 +239,7 @@ impl EcClient {
 
         let response = self.client
             .post(&url)
-            .header("Cookie", &self.cookie)
+            .header("Cookie", &self.cookie_header())
             .json(&payload)
             .send()
             .await?;
