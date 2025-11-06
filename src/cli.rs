@@ -1,4 +1,41 @@
 use clap::{Parser, Subcommand};
+use chrono::{Datelike, NaiveDate, Utc, Weekday};
+
+/// Calculate the default quest year based on current date
+///
+/// Everybody Codes launches on the first Monday of November at 11pm UTC.
+///
+/// Returns current year if after 11pm UTC on first Monday of November,
+/// otherwise returns previous year.
+///
+/// Examples:
+/// - 2024-11-04 22:59 UTC -> 2023 (before cutoff)
+/// - 2024-11-04 23:00 UTC -> 2024 (at cutoff)
+/// - 2024-11-05 00:00 UTC -> 2024 (after cutoff)
+fn default_year() -> String {
+    let now = Utc::now();
+    let current_year = now.year();
+
+    // Find first Monday of November
+    let nov_1 = NaiveDate::from_ymd_opt(current_year, 11, 1).unwrap();
+    let mut first_monday = nov_1;
+
+    // Find the first Monday
+    while first_monday.weekday() != Weekday::Mon {
+        first_monday = first_monday.succ_opt().unwrap();
+    }
+
+    // Create the cutoff datetime: first Monday of November at 23:00 UTC
+    let cutoff = first_monday.and_hms_opt(23, 0, 0).unwrap();
+    let cutoff_datetime = chrono::DateTime::<Utc>::from_naive_utc_and_offset(cutoff, Utc);
+
+    // If we're past the cutoff, use current year; otherwise use previous year
+    if now >= cutoff_datetime {
+        current_year.to_string()
+    } else {
+        (current_year - 1).to_string()
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "ec-cli")]
@@ -22,7 +59,7 @@ pub enum Commands {
     /// Download and decrypt puzzle inputs and descriptions
     Fetch {
         /// Quest year
-        #[arg(short, long, default_value = "2024")]
+        #[arg(short, long, default_value_t = default_year().parse().unwrap())]
         year: i32,
 
         /// Quest day (1-20)
@@ -45,7 +82,7 @@ pub enum Commands {
     /// Display puzzle description in terminal
     Read {
         /// Quest year
-        #[arg(short, long, default_value = "2024")]
+        #[arg(short, long, default_value_t = default_year().parse().unwrap())]
         year: i32,
 
         /// Quest day (1-20)
@@ -60,7 +97,7 @@ pub enum Commands {
     /// Submit puzzle answer
     Submit {
         /// Quest year
-        #[arg(short, long, default_value = "2024")]
+        #[arg(short, long, default_value_t = default_year().parse().unwrap())]
         year: i32,
 
         /// Quest day (1-20)
