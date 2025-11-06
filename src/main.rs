@@ -107,13 +107,33 @@ async fn handle_fetch(
 async fn handle_read(year: i32, day: i32, width: Option<usize>) -> error::Result<()> {
     let storage = Storage::new(None);
 
-    // Check if description exists locally
+    // Check if description exists locally and if it needs updating
     let description = if storage.has_description(year, day) {
-        info!("Reading description from local storage...");
-        storage.load_description(year, day)?
+        let cached = storage.load_description(year, day)?;
+
+        // Check if we might have new parts available
+        let mut client = EcClient::new()?;
+        let keys = client.fetch_quest_keys(year, day).await?;
+
+        // Count how many parts we have keys for
+        let available_parts = 1 + keys.key2.is_some() as usize + keys.key3.is_some() as usize;
+
+        // Count how many PART markers are in the cached description
+        // Part 1 has no marker, so parts 2 and 3 add markers
+        let cached_parts = 1 + cached.matches(" PART 2 ").count() + cached.matches(" PART 3 ").count();
+
+        if cached_parts < available_parts {
+            info!("New parts unlocked, re-fetching description...");
+            let desc = client.fetch_description(year, day).await?;
+            storage.save_description(year, day, &desc)?;
+            desc
+        } else {
+            info!("Reading description from local storage...");
+            cached
+        }
     } else {
         info!("Description not found locally, fetching...");
-        let client = EcClient::new()?;
+        let mut client = EcClient::new()?;
         let desc = client.fetch_description(year, day).await?;
         storage.save_description(year, day, &desc)?;
         desc
