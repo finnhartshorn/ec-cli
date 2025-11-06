@@ -184,7 +184,6 @@ impl EcClient {
     /// Fetch and decrypt puzzle description
     pub async fn fetch_description(&self, year: i32, day: i32) -> Result<String> {
         let keys = self.fetch_quest_keys(year, day).await?;
-        let key = &keys.key1; // Description uses key1
 
         info!("Downloading encrypted description for {}/{}...", year, day);
         let url = format!("{}/assets/{}/{}/description.json", CDN_URL, year, day);
@@ -209,14 +208,32 @@ impl EcClient {
         // Parse as JSON object with parts "1", "2", "3"
         let encrypted_parts: serde_json::Value = serde_json::from_str(&body)?;
 
-        // Get part 1 (description should be same for all parts)
-        let encrypted = encrypted_parts["1"]
-            .as_str()
-            .ok_or_else(|| EcError::DecryptionError("Missing part 1 in description".to_string()))?;
+        // Decrypt all available parts and combine them
+        let mut combined = String::new();
 
-        let decrypted = decrypt_aes_cbc(encrypted, key)?;
+        for (part_num, key_opt) in [
+            (1, Some(&keys.key1)),
+            (2, keys.key2.as_ref()),
+            (3, keys.key3.as_ref()),
+        ] {
+            if let Some(key) = key_opt {
+                if let Some(encrypted) = encrypted_parts[&part_num.to_string()].as_str() {
+                    debug!("Decrypting description part {}...", part_num);
+                    let decrypted = decrypt_aes_cbc(encrypted, key)?;
 
-        Ok(decrypted)
+                    if !combined.is_empty() {
+                        combined.push_str("\n\n");
+                        combined.push_str(&"=".repeat(80));
+                        combined.push_str(&format!("\n PART {} \n", part_num));
+                        combined.push_str(&"=".repeat(80));
+                        combined.push_str("\n\n");
+                    }
+                    combined.push_str(&decrypted);
+                }
+            }
+        }
+
+        Ok(combined)
     }
 
     /// Submit an answer for a puzzle
