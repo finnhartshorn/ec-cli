@@ -41,11 +41,23 @@ async fn main() {
             part,
             description_only,
             input_only,
+            description_path,
+            input_path,
         } => {
-            handle_fetch(year, day, part, description_only, input_only).await
+            handle_fetch(
+                cli.base_path.clone(),
+                year,
+                day,
+                part,
+                description_only,
+                input_only,
+                description_path,
+                input_path,
+            )
+            .await
         }
         Commands::Read { year, day, width } => {
-            handle_read(year, day, width).await
+            handle_read(cli.base_path.clone(), year, day, width).await
         }
         Commands::Submit {
             year,
@@ -64,14 +76,27 @@ async fn main() {
 }
 
 async fn handle_fetch(
+    base_path: Option<String>,
     year: i32,
     day: i32,
     part: i32,
     description_only: bool,
     input_only: bool,
+    description_path: Option<String>,
+    input_path: Option<String>,
 ) -> error::Result<()> {
     let mut client = EcClient::new()?;
-    let storage = Storage::new(None);
+
+    // Build storage with custom paths
+    let mut storage = Storage::new(base_path.map(|p| p.into()));
+
+    if let Some(desc_path) = description_path {
+        storage = storage.with_description_path(desc_path.into());
+    }
+
+    if let Some(inp_path) = input_path {
+        storage = storage.with_input_path(inp_path.into());
+    }
 
     // Fetch description (unless input_only)
     if !input_only {
@@ -104,8 +129,8 @@ async fn handle_fetch(
     Ok(())
 }
 
-async fn handle_read(year: i32, day: i32, width: Option<usize>) -> error::Result<()> {
-    let storage = Storage::new(None);
+async fn handle_read(base_path: Option<String>, year: i32, day: i32, width: Option<usize>) -> error::Result<()> {
+    let storage = Storage::new(base_path.map(|p| p.into()));
 
     // Check if description exists locally and if it needs updating
     let description = if storage.has_description(year, day) {

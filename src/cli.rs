@@ -52,6 +52,10 @@ pub struct Cli {
     /// Suppress non-error output
     #[arg(long, global = true)]
     pub quiet: bool,
+
+    /// Base directory for storing files (default: "data")
+    #[arg(long, global = true)]
+    pub base_path: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -77,6 +81,14 @@ pub enum Commands {
         /// Download input only (skip description)
         #[arg(long)]
         input_only: bool,
+
+        /// Custom path for saving description file
+        #[arg(long)]
+        description_path: Option<String>,
+
+        /// Custom path for saving input file
+        #[arg(long)]
+        input_path: Option<String>,
     },
 
     /// Display puzzle description in terminal

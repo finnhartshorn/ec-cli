@@ -5,6 +5,7 @@ Cargo.lock
 202*/inputs/
 202*/descriptions/
 202*/samples/
+data/
 
 # Cookie file
 .everybodycodes.cookie

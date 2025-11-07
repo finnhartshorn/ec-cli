@@ -6,13 +6,31 @@ use crate::error::Result;
 
 pub struct Storage {
     base_path: PathBuf,
+    description_path: Option<PathBuf>,
+    input_path: Option<PathBuf>,
 }
 
 impl Storage {
-    /// Create a new storage manager with base path (defaults to current directory)
+    /// Create a new storage manager with base path (defaults to "data")
     pub fn new(base_path: Option<PathBuf>) -> Self {
-        let base_path = base_path.unwrap_or_else(|| PathBuf::from("."));
-        Self { base_path }
+        let base_path = base_path.unwrap_or_else(|| PathBuf::from("data"));
+        Self {
+            base_path,
+            description_path: None,
+            input_path: None,
+        }
+    }
+
+    /// Create storage manager with custom description path
+    pub fn with_description_path(mut self, path: PathBuf) -> Self {
+        self.description_path = Some(path);
+        self
+    }
+
+    /// Create storage manager with custom input path
+    pub fn with_input_path(mut self, path: PathBuf) -> Self {
+        self.input_path = Some(path);
+        self
     }
 
     /// Get the path for inputs directory
@@ -42,11 +60,21 @@ impl Storage {
 
     /// Save puzzle input to file
     pub fn save_input(&self, year: i32, day: i32, part: i32, content: &str) -> Result<PathBuf> {
-        let dir = self.inputs_dir(year);
-        Self::ensure_dir(&dir)?;
+        let path = if let Some(custom_path) = &self.input_path {
+            // Use custom path directly
+            custom_path.clone()
+        } else {
+            // Use default path structure
+            let dir = self.inputs_dir(year);
+            Self::ensure_dir(&dir)?;
+            let filename = format!("{}-{}.txt", day, part);
+            dir.join(filename)
+        };
 
-        let filename = format!("{}-{}.txt", day, part);
-        let path = dir.join(filename);
+        // Ensure parent directory exists for custom paths
+        if let Some(parent) = path.parent() {
+            Self::ensure_dir(parent)?;
+        }
 
         info!("Saving input to {:?}", path);
         fs::write(&path, content)?;
@@ -70,11 +98,21 @@ impl Storage {
 
     /// Save puzzle description to file
     pub fn save_description(&self, year: i32, day: i32, content: &str) -> Result<PathBuf> {
-        let dir = self.descriptions_dir(year);
-        Self::ensure_dir(&dir)?;
+        let path = if let Some(custom_path) = &self.description_path {
+            // Use custom path directly
+            custom_path.clone()
+        } else {
+            // Use default path structure
+            let dir = self.descriptions_dir(year);
+            Self::ensure_dir(&dir)?;
+            let filename = format!("{}.html", day);
+            dir.join(filename)
+        };
 
-        let filename = format!("{}.html", day);
-        let path = dir.join(filename);
+        // Ensure parent directory exists for custom paths
+        if let Some(parent) = path.parent() {
+            Self::ensure_dir(parent)?;
+        }
 
         info!("Saving description to {:?}", path);
         fs::write(&path, content)?;
