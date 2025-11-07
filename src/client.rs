@@ -118,6 +118,14 @@ impl EcClient {
 
         let status = response.status();
         if !status.is_success() {
+            // 404 typically means the quest day isn't available yet
+            if status == reqwest::StatusCode::NOT_FOUND {
+                return Err(EcError::QuestNotAvailable {
+                    year,
+                    day,
+                    part: 1 // Default to part 1 for day-level errors
+                });
+            }
             return Err(EcError::HttpError {
                 status: status.as_u16(),
                 message: format!("Failed to fetch quest keys: {}", status),
@@ -128,8 +136,28 @@ impl EcClient {
         let body = response.text().await?;
         debug!("Quest keys response: {}", body);
 
+        // Check if it's an empty object (quest not available yet)
+        if body.trim() == "{}" {
+            return Err(EcError::QuestNotAvailable {
+                year,
+                day,
+                part: 1
+            });
+        }
+
         let keys: QuestKeys = serde_json::from_str(&body)
-            .map_err(|e| EcError::JsonError(e))?;
+            .map_err(|e| {
+                // If JSON parsing fails and key1 is missing, quest likely not available
+                if e.to_string().contains("missing field `key1`") {
+                    EcError::QuestNotAvailable {
+                        year,
+                        day,
+                        part: 1
+                    }
+                } else {
+                    EcError::JsonError(e)
+                }
+            })?;
         debug!("Fetched quest keys for {}/{}", year, day);
 
         Ok(keys)
@@ -140,7 +168,7 @@ impl EcClient {
         let seed = self.get_user_seed().await?;
         let keys = self.fetch_quest_keys(year, day).await?;
         let key = keys.get_key(part)
-            .map_err(|e| EcError::DecryptionError(e))?;
+            .map_err(|_| EcError::QuestNotAvailable { year, day, part })?;
 
         info!("Downloading encrypted input for {}/{} part {}...", year, day, part);
         let url = format!("{}/assets/{}/{}/input/{}.json", CDN_URL, year, day, seed);
@@ -151,10 +179,14 @@ impl EcClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() {
+            if status == reqwest::StatusCode::NOT_FOUND {
+                return Err(EcError::QuestNotAvailable { year, day, part });
+            }
             return Err(EcError::HttpError {
-                status: response.status().as_u16(),
-                message: format!("Failed to fetch input: {}", response.status()),
+                status: status.as_u16(),
+                message: format!("Failed to fetch input: {}", status),
             });
         }
 
@@ -193,10 +225,18 @@ impl EcClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
+        let status = response.status();
+        if !status.is_success() {
+            if status == reqwest::StatusCode::NOT_FOUND {
+                return Err(EcError::QuestNotAvailable {
+                    year,
+                    day,
+                    part: 1 // Description is day-level
+                });
+            }
             return Err(EcError::HttpError {
-                status: response.status().as_u16(),
-                message: format!("Failed to fetch description: {}", response.status()),
+                status: status.as_u16(),
+                message: format!("Failed to fetch description: {}", status),
             });
         }
 

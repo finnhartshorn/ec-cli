@@ -23,6 +23,9 @@ pub enum EcError {
     #[error("Answer already submitted")]
     AlreadySubmitted,
 
+    #[error("Quest not available yet: {year}/{day} part {part}")]
+    QuestNotAvailable { year: i32, day: i32, part: i32 },
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 
