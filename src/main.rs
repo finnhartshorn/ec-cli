@@ -43,6 +43,8 @@ async fn main() {
             input_only,
             description_path,
             input_path,
+            sample_path,
+            sample_answer_path,
         } => {
             handle_fetch(
                 cli.base_path.clone(),
@@ -53,6 +55,8 @@ async fn main() {
                 input_only,
                 description_path,
                 input_path,
+                sample_path,
+                sample_answer_path,
             )
             .await
         }
@@ -84,6 +88,8 @@ async fn handle_fetch(
     input_only: bool,
     description_path: Option<String>,
     input_path: Option<String>,
+    sample_path: Option<String>,
+    sample_answer_path: Option<String>,
 ) -> error::Result<()> {
     let mut client = EcClient::new()?;
 
@@ -96,6 +102,14 @@ async fn handle_fetch(
 
     if let Some(inp_path) = input_path {
         storage = storage.with_input_path(inp_path.into());
+    }
+
+    if let Some(samp_path) = sample_path {
+        storage = storage.with_sample_path(samp_path.into());
+    }
+
+    if let Some(samp_ans_path) = sample_answer_path {
+        storage = storage.with_sample_answer_path(samp_ans_path.into());
     }
 
     // Fetch description (unless input_only)

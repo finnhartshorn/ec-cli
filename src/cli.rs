@@ -89,6 +89,14 @@ pub enum Commands {
         /// Custom path for saving input file
         #[arg(long)]
         input_path: Option<String>,
+
+        /// Custom path for saving sample file
+        #[arg(long)]
+        sample_path: Option<String>,
+
+        /// Custom path for saving sample answer file
+        #[arg(long)]
+        sample_answer_path: Option<String>,
     },
 
     /// Display puzzle description in terminal

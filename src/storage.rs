@@ -8,6 +8,8 @@ pub struct Storage {
     base_path: PathBuf,
     description_path: Option<PathBuf>,
     input_path: Option<PathBuf>,
+    sample_path: Option<PathBuf>,
+    sample_answer_path: Option<PathBuf>,
 }
 
 impl Storage {
@@ -18,6 +20,8 @@ impl Storage {
             base_path,
             description_path: None,
             input_path: None,
+            sample_path: None,
+            sample_answer_path: None,
         }
     }
 
@@ -30,6 +34,18 @@ impl Storage {
     /// Create storage manager with custom input path
     pub fn with_input_path(mut self, path: PathBuf) -> Self {
         self.input_path = Some(path);
+        self
+    }
+
+    /// Create storage manager with custom sample path
+    pub fn with_sample_path(mut self, path: PathBuf) -> Self {
+        self.sample_path = Some(path);
+        self
+    }
+
+    /// Create storage manager with custom sample answer path
+    pub fn with_sample_answer_path(mut self, path: PathBuf) -> Self {
+        self.sample_answer_path = Some(path);
         self
     }
 
@@ -84,11 +100,21 @@ impl Storage {
 
     /// Save sample/example data to file
     pub fn save_sample(&self, year: i32, day: i32, part: i32, content: &str) -> Result<PathBuf> {
-        let dir = self.samples_dir(year);
-        Self::ensure_dir(&dir)?;
+        let path = if let Some(custom_path) = &self.sample_path {
+            // Use custom path directly
+            custom_path.clone()
+        } else {
+            // Use default path structure
+            let dir = self.samples_dir(year);
+            Self::ensure_dir(&dir)?;
+            let filename = format!("{}-{}.txt", day, part);
+            dir.join(filename)
+        };
 
-        let filename = format!("{}-{}.txt", day, part);
-        let path = dir.join(filename);
+        // Ensure parent directory exists for custom paths
+        if let Some(parent) = path.parent() {
+            Self::ensure_dir(parent)?;
+        }
 
         info!("Saving sample to {:?}", path);
         fs::write(&path, content)?;
@@ -104,11 +130,21 @@ impl Storage {
         part: i32,
         content: &str,
     ) -> Result<PathBuf> {
-        let dir = self.samples_dir(year);
-        Self::ensure_dir(&dir)?;
+        let path = if let Some(custom_path) = &self.sample_answer_path {
+            // Use custom path directly
+            custom_path.clone()
+        } else {
+            // Use default path structure
+            let dir = self.samples_dir(year);
+            Self::ensure_dir(&dir)?;
+            let filename = format!("{}-{}.answer", day, part);
+            dir.join(filename)
+        };
 
-        let filename = format!("{}-{}.answer", day, part);
-        let path = dir.join(filename);
+        // Ensure parent directory exists for custom paths
+        if let Some(parent) = path.parent() {
+            Self::ensure_dir(parent)?;
+        }
 
         info!("Saving expected answer to {:?}", path);
         fs::write(&path, content)?;
