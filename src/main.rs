@@ -7,7 +7,7 @@ mod models;
 mod storage;
 
 use clap::Parser;
-use log::{error, info};
+use log::{error, info, warn};
 
 use crate::cli::{Cli, Commands};
 use crate::client::EcClient;
@@ -104,16 +104,44 @@ async fn handle_fetch(
         let path = storage.save_description(year, day, &description)?;
         info!("Description saved to {:?}", path);
 
-        // Extract and save samples
-        let samples = display::extract_samples(&description);
-        if !samples.is_empty() {
-            info!("Found {} sample(s)", samples.len());
-            for (i, sample) in samples.iter().enumerate() {
-                // Save samples with part index (assuming part 1 for samples)
-                let sample_part = i as i32 + 1;
-                if sample_part <= 3 {
-                    let path = storage.save_sample(year, day, sample_part, sample)?;
-                    info!("Sample {} saved to {:?}", sample_part, path);
+        // Extract and save samples with expected answers
+        // Split description by parts to extract samples and answers per part
+        let parts: Vec<&str> = description.split("PART 2").collect();
+        let (part1_html, rest) = if parts.len() > 1 {
+            (parts[0], parts[1])
+        } else {
+            (description.as_str(), "")
+        };
+
+        let (part2_html, part3_html) = if !rest.is_empty() {
+            let parts3: Vec<&str> = rest.split("PART 3").collect();
+            if parts3.len() > 1 {
+                (parts3[0], parts3[1])
+            } else {
+                (rest, "")
+            }
+        } else {
+            ("", "")
+        };
+
+        // Extract last sample and expected answer for each part
+        for (part_num, part_html) in [(1, part1_html), (2, part2_html), (3, part3_html)]
+            .iter()
+            .filter(|(_, html)| !html.is_empty())
+        {
+            let samples = display::extract_samples(part_html);
+            let expected_answer = display::extract_expected_answer(part_html);
+
+            if let Some(sample) = samples.last() {
+                let path = storage.save_sample(year, day, *part_num, sample)?;
+                info!("Sample for part {} saved to {:?}", part_num, path);
+
+                if let Some(answer) = expected_answer {
+                    let answer_path =
+                        storage.save_expected_answer(year, day, *part_num, &answer)?;
+                    info!("Expected answer for part {} saved to {:?}", part_num, answer_path);
+                } else {
+                    warn!("Could not extract expected answer for part {}", part_num);
                 }
             }
         }

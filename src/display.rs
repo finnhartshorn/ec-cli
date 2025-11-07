@@ -12,6 +12,19 @@ pub fn extract_samples(html: &str) -> Vec<String> {
         .collect()
 }
 
+/// Extract expected answer from HTML description
+///
+/// Looks for the last occurrence of <pre> <b>ANSWER</b> </pre> pattern
+/// which typically appears at the end of example sections
+pub fn extract_expected_answer(html: &str) -> Option<String> {
+    let re = Regex::new(r#"<pre>\s*<b>([^<]+)</b>\s*</pre>"#).unwrap();
+
+    // Get the last match, as that's typically the final answer
+    re.captures_iter(html)
+        .last()
+        .map(|cap| cap[1].trim().to_string())
+}
+
 /// Convert HTML to plain text for terminal display
 ///
 /// Wraps text to specified width and formats for terminal display
@@ -77,5 +90,37 @@ R3,L2,R3,L1
         let samples = extract_samples(html);
         assert_eq!(samples.len(), 1);
         assert_eq!(samples[0], "Vyrdax,Drakzyph,Fyrryn,Elarzris\n\nR3,L2,R3,L1\n");
+    }
+
+    #[test]
+    fn test_extract_expected_answer() {
+        let html = r#"<p>The answer is <pre> <b>Drakzyph</b> </pre>.</p>"#;
+        let answer = extract_expected_answer(html);
+        assert_eq!(answer, Some("Drakzyph".to_string()));
+    }
+
+    #[test]
+    fn test_extract_expected_answer_with_whitespace() {
+        let html = r#"<p>Result: <pre><b> Fyrryn </b></pre></p>"#;
+        let answer = extract_expected_answer(html);
+        assert_eq!(answer, Some("Fyrryn".to_string()));
+    }
+
+    #[test]
+    fn test_extract_expected_answer_none() {
+        let html = r#"<p>No answer here</p>"#;
+        let answer = extract_expected_answer(html);
+        assert_eq!(answer, None);
+    }
+
+    #[test]
+    fn test_extract_expected_answer_last_match() {
+        let html = r#"
+            <p>First: <pre> <b>Wrong</b> </pre></p>
+            <p>Second: <pre> <b>AlsoWrong</b> </pre></p>
+            <p>The final answer is <pre> <b>Correct</b> </pre>.</p>
+        "#;
+        let answer = extract_expected_answer(html);
+        assert_eq!(answer, Some("Correct".to_string()));
     }
 }

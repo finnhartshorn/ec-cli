@@ -96,6 +96,26 @@ impl Storage {
         Ok(path)
     }
 
+    /// Save expected answer for a sample to file
+    pub fn save_expected_answer(
+        &self,
+        year: i32,
+        day: i32,
+        part: i32,
+        content: &str,
+    ) -> Result<PathBuf> {
+        let dir = self.samples_dir(year);
+        Self::ensure_dir(&dir)?;
+
+        let filename = format!("{}-{}.answer", day, part);
+        let path = dir.join(filename);
+
+        info!("Saving expected answer to {:?}", path);
+        fs::write(&path, content)?;
+
+        Ok(path)
+    }
+
     /// Save puzzle description to file
     pub fn save_description(&self, year: i32, day: i32, content: &str) -> Result<PathBuf> {
         let path = if let Some(custom_path) = &self.description_path {
@@ -127,6 +147,18 @@ impl Storage {
         let path = dir.join(filename);
 
         debug!("Loading input from {:?}", path);
+        let content = fs::read_to_string(&path)?;
+
+        Ok(content)
+    }
+
+    /// Load expected answer from file
+    pub fn load_expected_answer(&self, year: i32, day: i32, part: i32) -> Result<String> {
+        let dir = self.samples_dir(year);
+        let filename = format!("{}-{}.answer", day, part);
+        let path = dir.join(filename);
+
+        debug!("Loading expected answer from {:?}", path);
         let content = fs::read_to_string(&path)?;
 
         Ok(content)
