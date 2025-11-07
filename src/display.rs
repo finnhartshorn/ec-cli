@@ -5,7 +5,7 @@ use regex::Regex;
 ///
 /// Looks for content within <pre class="note"> tags
 pub fn extract_samples(html: &str) -> Vec<String> {
-    let re = Regex::new(r#"<pre class="note">(.*?)</pre>"#).unwrap();
+    let re = Regex::new(r#"(?s)<pre class="note">(.*?)</pre>"#).unwrap();
 
     re.captures_iter(html)
         .map(|cap| cap[1].to_string())
@@ -66,5 +66,16 @@ mod tests {
         let html = r#"<p>No samples here</p>"#;
         let samples = extract_samples(html);
         assert_eq!(samples.len(), 0);
+    }
+
+    #[test]
+    fn test_extract_samples_multiline() {
+        let html = r#"<pre class="note">Vyrdax,Drakzyph,Fyrryn,Elarzris
+
+R3,L2,R3,L1
+</pre>"#;
+        let samples = extract_samples(html);
+        assert_eq!(samples.len(), 1);
+        assert_eq!(samples[0], "Vyrdax,Drakzyph,Fyrryn,Elarzris\n\nR3,L2,R3,L1\n");
     }
 }
