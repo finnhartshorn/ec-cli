@@ -5,15 +5,6 @@ pub enum EcError {
     #[error("Authentication failed: missing cookie")]
     MissingCookie,
 
-    #[error("Invalid day: {0} (must be 1-20)")]
-    InvalidDay(i32),
-
-    #[error("Invalid part: {0} (must be 1-3)")]
-    InvalidPart(i32),
-
-    #[error("Invalid year: {0}")]
-    InvalidYear(i32),
-
     #[error("Decryption failed: {0}")]
     DecryptionError(String),
 

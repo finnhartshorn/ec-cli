@@ -6,30 +6,6 @@ pub struct User {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct EncryptedContent {
-    #[serde(rename = "1")]
-    pub part1: Option<String>,
-    #[serde(rename = "2")]
-    pub part2: Option<String>,
-    #[serde(rename = "3")]
-    pub part3: Option<String>,
-}
-
-impl EncryptedContent {
-    pub fn get_part(&self, part: i32) -> Result<&str, String> {
-        match part {
-            1 => self.part1.as_deref()
-                .ok_or_else(|| "Part 1 not available".to_string()),
-            2 => self.part2.as_deref()
-                .ok_or_else(|| "Part 2 not available".to_string()),
-            3 => self.part3.as_deref()
-                .ok_or_else(|| "Part 3 not available".to_string()),
-            _ => Err(format!("Invalid part: {}", part)),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
 pub struct QuestKeys {
     pub key1: String,
     #[serde(default)]
@@ -63,23 +39,8 @@ pub struct SubmitResponse {
     pub length_correct: bool,
     pub first_correct: bool,
     pub time: i64,
-    pub local_time: i64,
-    pub global_time: i64,
     pub global_place: i64,
     pub global_score: i64,
     #[serde(default)]
     pub message: String,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Quest {
-    pub year: i32,
-    pub day: i32,
-    pub part: i32,
-}
-
-impl Quest {
-    pub fn new(year: i32, day: i32, part: i32) -> Self {
-        Self { year, day, part }
-    }
 }

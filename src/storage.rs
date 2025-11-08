@@ -176,30 +176,6 @@ impl Storage {
         Ok(path)
     }
 
-    /// Load puzzle input from file
-    pub fn load_input(&self, year: i32, day: i32, part: i32) -> Result<String> {
-        let dir = self.inputs_dir(year);
-        let filename = format!("{}-{}.txt", day, part);
-        let path = dir.join(filename);
-
-        debug!("Loading input from {:?}", path);
-        let content = fs::read_to_string(&path)?;
-
-        Ok(content)
-    }
-
-    /// Load expected answer from file
-    pub fn load_expected_answer(&self, year: i32, day: i32, part: i32) -> Result<String> {
-        let dir = self.samples_dir(year);
-        let filename = format!("{}-{}.answer", day, part);
-        let path = dir.join(filename);
-
-        debug!("Loading expected answer from {:?}", path);
-        let content = fs::read_to_string(&path)?;
-
-        Ok(content)
-    }
-
     /// Load puzzle description from file
     pub fn load_description(&self, year: i32, day: i32) -> Result<String> {
         let dir = self.descriptions_dir(year);
@@ -210,14 +186,6 @@ impl Storage {
         let content = fs::read_to_string(&path)?;
 
         Ok(content)
-    }
-
-    /// Check if input file exists
-    pub fn has_input(&self, year: i32, day: i32, part: i32) -> bool {
-        let dir = self.inputs_dir(year);
-        let filename = format!("{}-{}.txt", day, part);
-        let path = dir.join(filename);
-        path.exists()
     }
 
     /// Check if description file exists
