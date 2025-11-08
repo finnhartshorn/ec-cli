@@ -96,6 +96,9 @@ async fn handle_fetch(
     // Build storage with custom paths
     let mut storage = Storage::new(base_path.map(|p| p.into()));
 
+    // Track if custom sample/answer paths are used
+    let use_custom_paths = sample_path.is_some() || sample_answer_path.is_some();
+
     if let Some(desc_path) = description_path {
         storage = storage.with_description_path(desc_path.into());
     }
@@ -143,9 +146,13 @@ async fn handle_fetch(
         };
 
         // Extract last sample and expected answer for each part
+        // When custom sample/answer paths are specified, only save for the requested part
+        // to avoid overwriting files. Otherwise, save for all available parts.
+
         for (part_num, part_html) in [(1, part1_html), (2, part2_html), (3, part3_html)]
             .iter()
             .filter(|(_, html)| !html.is_empty())
+            .filter(|(pnum, _)| !use_custom_paths || *pnum == part)
         {
             let samples = display::extract_samples(part_html);
             let expected_answer = display::extract_expected_answer(part_html);
