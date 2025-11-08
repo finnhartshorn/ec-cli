@@ -29,7 +29,7 @@ pub fn extract_expected_answer(html: &str) -> Option<String> {
 ///
 /// Wraps text to specified width and formats for terminal display
 pub fn html_to_text(html: &str, width: usize) -> String {
-    from_read(html.as_bytes(), width)
+    from_read(html.as_bytes(), width).unwrap_or("Error converting HTML to text".to_string())
 }
 
 /// Format submit response for display

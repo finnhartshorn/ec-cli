@@ -190,7 +190,7 @@ async fn handle_read(base_path: Option<String>, year: i32, day: i32, width: Opti
         let cached = storage.load_description(year, day)?;
 
         // Check if we might have new parts available
-        let mut client = EcClient::new()?;
+        let client = EcClient::new()?;
         let keys = client.fetch_quest_keys(year, day).await?;
 
         // Count how many parts we have keys for
@@ -211,7 +211,7 @@ async fn handle_read(base_path: Option<String>, year: i32, day: i32, width: Opti
         }
     } else {
         info!("Description not found locally, fetching...");
-        let mut client = EcClient::new()?;
+        let client = EcClient::new()?;
         let desc = client.fetch_description(year, day).await?;
         storage.save_description(year, day, &desc)?;
         desc
