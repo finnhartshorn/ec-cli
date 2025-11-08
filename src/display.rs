@@ -8,7 +8,7 @@ pub fn extract_samples(html: &str) -> Vec<String> {
     let re = Regex::new(r#"(?s)<pre class="note">(.*?)</pre>"#).unwrap();
 
     re.captures_iter(html)
-        .map(|cap| cap[1].trim_start_matches('\n').to_string())
+        .map(|cap| cap[1].trim_start().to_string())
         .collect()
 }
 
