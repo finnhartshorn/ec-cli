@@ -156,8 +156,8 @@ impl Cli {
 }
 
 fn validate_year(year: i32) -> Result<(), String> {
-    if year < 2024 || year > 2030 {
-        return Err(format!("Invalid year: {} (must be between 2024-2030)", year));
+    if year < 2024 {
+        return Err(format!("Invalid year: {} (must be at least 2024)", year));
     }
     Ok(())
 }
