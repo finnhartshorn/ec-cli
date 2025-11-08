@@ -79,6 +79,7 @@ async fn main() {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn handle_fetch(
     base_path: Option<String>,
     year: i32,
