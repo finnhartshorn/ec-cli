@@ -8,7 +8,7 @@ pub fn extract_samples(html: &str) -> Vec<String> {
     let re = Regex::new(r#"(?s)<pre class="note">(.*?)</pre>"#).unwrap();
 
     re.captures_iter(html)
-        .map(|cap| cap[1].to_string())
+        .map(|cap| cap[1].trim_start_matches('\n').to_string())
         .collect()
 }
 
@@ -83,7 +83,8 @@ mod tests {
 
     #[test]
     fn test_extract_samples_multiline() {
-        let html = r#"<pre class="note">Vyrdax,Drakzyph,Fyrryn,Elarzris
+        let html = r#"<pre class="note">
+Vyrdax,Drakzyph,Fyrryn,Elarzris
 
 R3,L2,R3,L1
 </pre>"#;
