@@ -29,7 +29,7 @@ async fn main() {
 
     // Validate arguments
     if let Err(e) = cli.validate() {
-        error!("{}", e);
+        error!("{e}");
         std::process::exit(1);
     }
 
@@ -74,7 +74,7 @@ async fn main() {
     };
 
     if let Err(e) = result {
-        error!("{}", e);
+        error!("{e}");
         std::process::exit(1);
     }
 }
@@ -119,7 +119,7 @@ async fn handle_fetch(
     if !input_only {
         let description = client.fetch_description(year, day).await?;
         let path = storage.save_description(year, day, &description)?;
-        info!("Description saved to {:?}", path);
+        info!("Description saved to {path:?}");
 
         // Extract and save samples with expected answers
         // Split description by parts to extract samples and answers per part
@@ -159,14 +159,14 @@ async fn handle_fetch(
 
             if let Some(sample) = samples.last() {
                 let path = storage.save_sample(year, day, *part_num, sample)?;
-                info!("Sample for part {} saved to {:?}", part_num, path);
+                info!("Sample for part {part_num} saved to {path:?}");
 
                 if let Some(answer) = expected_answer {
                     let answer_path =
                         storage.save_expected_answer(year, day, *part_num, &answer)?;
-                    info!("Expected answer for part {} saved to {:?}", part_num, answer_path);
+                    info!("Expected answer for part {part_num} saved to {answer_path:?}");
                 } else {
-                    warn!("Could not extract expected answer for part {}", part_num);
+                    warn!("Could not extract expected answer for part {part_num}");
                 }
             }
         }
@@ -176,7 +176,7 @@ async fn handle_fetch(
     if !description_only {
         let input = client.fetch_input(year, day, part).await?;
         let path = storage.save_input(year, day, part, &input)?;
-        info!("Input saved to {:?}", path);
+        info!("Input saved to {path:?}");
     }
 
     Ok(())
@@ -226,7 +226,7 @@ async fn handle_read(base_path: Option<String>, year: i32, day: i32, width: Opti
 
     // Convert HTML to text and display
     let text = display::html_to_text(&description, display_width);
-    println!("{}", text);
+    println!("{text}");
 
     Ok(())
 }
@@ -237,7 +237,7 @@ async fn handle_submit(year: i32, day: i32, part: i32, answer: &str) -> error::R
 
     // Display formatted response
     let output = display::format_submit_response(&response);
-    println!("{}", output);
+    println!("{output}");
 
     Ok(())
 }

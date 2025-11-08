@@ -157,21 +157,21 @@ impl Cli {
 
 fn validate_year(year: i32) -> Result<(), String> {
     if year < 2024 {
-        return Err(format!("Invalid year: {} (must be at least 2024)", year));
+        return Err(format!("Invalid year: {year} (must be at least 2024)"));
     }
     Ok(())
 }
 
 fn validate_day(day: i32) -> Result<(), String> {
     if !(1..=20).contains(&day) {
-        return Err(format!("Invalid day: {} (must be 1-20)", day));
+        return Err(format!("Invalid day: {day} (must be 1-20)"));
     }
     Ok(())
 }
 
 fn validate_part(part: i32) -> Result<(), String> {
     if !(1..=3).contains(&part) {
-        return Err(format!("Invalid part: {} (must be 1-3)", part));
+        return Err(format!("Invalid part: {part} (must be 1-3)"));
     }
     Ok(())
 }

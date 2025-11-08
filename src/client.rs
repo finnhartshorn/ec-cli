@@ -50,7 +50,7 @@ impl EcClient {
         if let Some(home_dir) = dirs::home_dir() {
             let cookie_path = home_dir.join(".everybodycodes.cookie");
             if cookie_path.exists() {
-                debug!("Loading cookie from {:?}", cookie_path);
+                debug!("Loading cookie from {cookie_path:?}");
                 let cookie = fs::read_to_string(cookie_path)?
                     .trim()
                     .to_string();
@@ -62,7 +62,7 @@ impl EcClient {
         if let Some(config_dir) = dirs::config_dir() {
             let cookie_path = config_dir.join("everybodycodes").join("cookie");
             if cookie_path.exists() {
-                debug!("Loading cookie from {:?}", cookie_path);
+                debug!("Loading cookie from {cookie_path:?}");
                 let cookie = fs::read_to_string(cookie_path)?
                     .trim()
                     .to_string();
@@ -80,7 +80,7 @@ impl EcClient {
         }
 
         info!("Fetching user seed...");
-        let url = format!("{}/api/user/me", BASE_URL);
+        let url = format!("{BASE_URL}/api/user/me");
 
         let response = self.client
             .get(&url)
@@ -96,7 +96,7 @@ impl EcClient {
         }
 
         let body = response.text().await?;
-        debug!("User API response: {}", body);
+        debug!("User API response: {body}");
 
         let user: User = serde_json::from_str(&body)?;
         self.user_seed = Some(user.seed);
@@ -107,8 +107,8 @@ impl EcClient {
 
     /// Fetch quest keys (key1, key2, key3) for decryption
     pub async fn fetch_quest_keys(&self, year: i32, day: i32) -> Result<QuestKeys> {
-        info!("Fetching quest keys for {}/{}...", year, day);
-        let url = format!("{}/api/event/{}/quest/{}", BASE_URL, year, day);
+        info!("Fetching quest keys for {year}/{day}...");
+        let url = format!("{BASE_URL}/api/event/{year}/quest/{day}");
 
         let response = self.client
             .get(&url)
@@ -128,13 +128,13 @@ impl EcClient {
             }
             return Err(EcError::HttpError {
                 status: status.as_u16(),
-                message: format!("Failed to fetch quest keys: {}", status),
+                message: format!("Failed to fetch quest keys: {status}"),
             });
         }
 
         // Get response text first for better error messages
         let body = response.text().await?;
-        debug!("Quest keys response: {}", body);
+        debug!("Quest keys response: {body}");
 
         // Check if it's an empty object (quest not available yet)
         if body.trim() == "{}" {
@@ -158,7 +158,7 @@ impl EcClient {
                     EcError::JsonError(e)
                 }
             })?;
-        debug!("Fetched quest keys for {}/{}", year, day);
+        debug!("Fetched quest keys for {year}/{day}");
 
         Ok(keys)
     }
@@ -170,9 +170,9 @@ impl EcClient {
         let key = keys.get_key(part)
             .map_err(|_| EcError::QuestNotAvailable { year, day, part })?;
 
-        info!("Downloading encrypted input for {}/{} part {}...", year, day, part);
-        let url = format!("{}/assets/{}/{}/input/{}.json", CDN_URL, year, day, seed);
-        debug!("Fetching input from URL: {}", url);
+        info!("Downloading encrypted input for {year}/{day} part {part}...");
+        let url = format!("{CDN_URL}/assets/{year}/{day}/input/{seed}.json");
+        debug!("Fetching input from URL: {url}");
 
         let response = self.client
             .get(&url)
@@ -186,7 +186,7 @@ impl EcClient {
             }
             return Err(EcError::HttpError {
                 status: status.as_u16(),
-                message: format!("Failed to fetch input: {}", status),
+                message: format!("Failed to fetch input: {status}"),
             });
         }
 
@@ -201,7 +201,7 @@ impl EcClient {
             let encrypted_parts: serde_json::Value = serde_json::from_str(&body)?;
             encrypted_parts[&part.to_string()]
                 .as_str()
-                .ok_or_else(|| EcError::DecryptionError(format!("Missing part {} in input", part)))?
+                .ok_or_else(|| EcError::DecryptionError(format!("Missing part {part} in input")))?
                 .to_string()
         } else {
             // Old format: plain string (with quotes)
@@ -217,8 +217,8 @@ impl EcClient {
     pub async fn fetch_description(&self, year: i32, day: i32) -> Result<String> {
         let keys = self.fetch_quest_keys(year, day).await?;
 
-        info!("Downloading encrypted description for {}/{}...", year, day);
-        let url = format!("{}/assets/{}/{}/description.json", CDN_URL, year, day);
+        info!("Downloading encrypted description for {year}/{day}...");
+        let url = format!("{CDN_URL}/assets/{year}/{day}/description.json");
 
         let response = self.client
             .get(&url)
@@ -236,7 +236,7 @@ impl EcClient {
             }
             return Err(EcError::HttpError {
                 status: status.as_u16(),
-                message: format!("Failed to fetch description: {}", status),
+                message: format!("Failed to fetch description: {status}"),
             });
         }
 
@@ -258,13 +258,13 @@ impl EcClient {
         ] {
             if let Some(key) = key_opt {
                 if let Some(encrypted) = encrypted_parts[&part_num.to_string()].as_str() {
-                    debug!("Decrypting description part {}...", part_num);
+                    debug!("Decrypting description part {part_num}...");
                     let decrypted = decrypt_aes_cbc(encrypted, key)?;
 
                     if !combined.is_empty() {
                         combined.push_str("\n\n");
                         combined.push_str(&"=".repeat(80));
-                        combined.push_str(&format!("\n PART {} \n", part_num));
+                        combined.push_str(&format!("\n PART {part_num} \n"));
                         combined.push_str(&"=".repeat(80));
                         combined.push_str("\n\n");
                     }
@@ -284,10 +284,9 @@ impl EcClient {
         part: i32,
         answer: &str,
     ) -> Result<SubmitResponse> {
-        info!("Submitting answer for {}/{} part {}...", year, day, part);
+        info!("Submitting answer for {year}/{day} part {part}...");
         let url = format!(
-            "{}/api/event/{}/quest/{}/part/{}/answer",
-            BASE_URL, year, day, part
+            "{BASE_URL}/api/event/{year}/quest/{day}/part/{part}/answer"
         );
 
         let payload = AnswerPayload {
@@ -308,7 +307,7 @@ impl EcClient {
             status if !status.is_success() => {
                 return Err(EcError::HttpError {
                     status: status.as_u16(),
-                    message: format!("Failed to submit answer: {}", status),
+                    message: format!("Failed to submit answer: {status}"),
                 });
             }
             _ => {}

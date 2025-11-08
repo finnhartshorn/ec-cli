@@ -68,7 +68,7 @@ impl Storage {
     fn ensure_dir<P: AsRef<Path>>(path: P) -> Result<()> {
         let path = path.as_ref();
         if !path.exists() {
-            debug!("Creating directory: {:?}", path);
+            debug!("Creating directory: {path:?}");
             fs::create_dir_all(path)?;
         }
         Ok(())
@@ -83,7 +83,7 @@ impl Storage {
             // Use default path structure
             let dir = self.inputs_dir(year);
             Self::ensure_dir(&dir)?;
-            let filename = format!("{}-{}.txt", day, part);
+            let filename = format!("{day}-{part}.txt");
             dir.join(filename)
         };
 
@@ -92,7 +92,7 @@ impl Storage {
             Self::ensure_dir(parent)?;
         }
 
-        info!("Saving input to {:?}", path);
+        info!("Saving input to {path:?}");
         fs::write(&path, content)?;
 
         Ok(path)
@@ -107,7 +107,7 @@ impl Storage {
             // Use default path structure
             let dir = self.samples_dir(year);
             Self::ensure_dir(&dir)?;
-            let filename = format!("{}-{}.txt", day, part);
+            let filename = format!("{day}-{part}.txt");
             dir.join(filename)
         };
 
@@ -116,7 +116,7 @@ impl Storage {
             Self::ensure_dir(parent)?;
         }
 
-        info!("Saving sample to {:?}", path);
+        info!("Saving sample to {path:?}");
         fs::write(&path, content)?;
 
         Ok(path)
@@ -137,7 +137,7 @@ impl Storage {
             // Use default path structure
             let dir = self.samples_dir(year);
             Self::ensure_dir(&dir)?;
-            let filename = format!("{}-{}.answer", day, part);
+            let filename = format!("{day}-{part}.answer");
             dir.join(filename)
         };
 
@@ -146,7 +146,7 @@ impl Storage {
             Self::ensure_dir(parent)?;
         }
 
-        info!("Saving expected answer to {:?}", path);
+        info!("Saving expected answer to {path:?}");
         fs::write(&path, content)?;
 
         Ok(path)
@@ -161,7 +161,7 @@ impl Storage {
             // Use default path structure
             let dir = self.descriptions_dir(year);
             Self::ensure_dir(&dir)?;
-            let filename = format!("{}.html", day);
+            let filename = format!("{day}.html");
             dir.join(filename)
         };
 
@@ -170,7 +170,7 @@ impl Storage {
             Self::ensure_dir(parent)?;
         }
 
-        info!("Saving description to {:?}", path);
+        info!("Saving description to {path:?}");
         fs::write(&path, content)?;
 
         Ok(path)
@@ -179,10 +179,10 @@ impl Storage {
     /// Load puzzle description from file
     pub fn load_description(&self, year: i32, day: i32) -> Result<String> {
         let dir = self.descriptions_dir(year);
-        let filename = format!("{}.html", day);
+        let filename = format!("{day}.html");
         let path = dir.join(filename);
 
-        debug!("Loading description from {:?}", path);
+        debug!("Loading description from {path:?}");
         let content = fs::read_to_string(&path)?;
 
         Ok(content)
@@ -191,7 +191,7 @@ impl Storage {
     /// Check if description file exists
     pub fn has_description(&self, year: i32, day: i32) -> bool {
         let dir = self.descriptions_dir(year);
-        let filename = format!("{}.html", day);
+        let filename = format!("{day}.html");
         let path = dir.join(filename);
         path.exists()
     }

@@ -29,11 +29,11 @@ pub fn decrypt_aes_cbc(ciphertext_hex: &str, key: &str) -> Result<String> {
     // IV is always first 16 bytes
     if key_len < 16 {
         return Err(EcError::DecryptionError(
-            format!("Key too short: {} bytes (need at least 16)", key_len)
+            format!("Key too short: {key_len} bytes (need at least 16)")
         ));
     }
     let iv: [u8; 16] = key_bytes[..16].try_into()
-        .map_err(|e| EcError::DecryptionError(format!("IV conversion failed: {}", e)))?;
+        .map_err(|e| EcError::DecryptionError(format!("IV conversion failed: {e}")))?;
 
     debug!("Using AES-{} based on key length", key_len * 8);
 
@@ -46,7 +46,7 @@ pub fn decrypt_aes_cbc(ciphertext_hex: &str, key: &str) -> Result<String> {
                 .map_err(|_| EcError::DecryptionError("Key conversion failed".to_string()))?;
             let cipher = Aes128CbcDec::new(&key_array.into(), &iv.into());
             cipher.decrypt_padded_mut::<cbc::cipher::block_padding::Pkcs7>(&mut buffer)
-                .map_err(|e| EcError::DecryptionError(format!("AES-128 decryption failed: {}", e)))?
+                .map_err(|e| EcError::DecryptionError(format!("AES-128 decryption failed: {e}")))?
         },
         24 => {
             // AES-192
@@ -54,7 +54,7 @@ pub fn decrypt_aes_cbc(ciphertext_hex: &str, key: &str) -> Result<String> {
                 .map_err(|_| EcError::DecryptionError("Key conversion failed".to_string()))?;
             let cipher = Aes192CbcDec::new(&key_array.into(), &iv.into());
             cipher.decrypt_padded_mut::<cbc::cipher::block_padding::Pkcs7>(&mut buffer)
-                .map_err(|e| EcError::DecryptionError(format!("AES-192 decryption failed: {}", e)))?
+                .map_err(|e| EcError::DecryptionError(format!("AES-192 decryption failed: {e}")))?
         },
         32 => {
             // AES-256
@@ -62,18 +62,18 @@ pub fn decrypt_aes_cbc(ciphertext_hex: &str, key: &str) -> Result<String> {
                 .map_err(|_| EcError::DecryptionError("Key conversion failed".to_string()))?;
             let cipher = Aes256CbcDec::new(&key_array.into(), &iv.into());
             cipher.decrypt_padded_mut::<cbc::cipher::block_padding::Pkcs7>(&mut buffer)
-                .map_err(|e| EcError::DecryptionError(format!("AES-256 decryption failed: {}", e)))?
+                .map_err(|e| EcError::DecryptionError(format!("AES-256 decryption failed: {e}")))?
         },
         _ => {
             return Err(EcError::DecryptionError(
-                format!("Invalid key length: {} (must be 16, 24, or 32 bytes)", key_len)
+                format!("Invalid key length: {key_len} (must be 16, 24, or 32 bytes)")
             ));
         }
     };
 
     // Convert to string
     String::from_utf8(decrypted.to_vec())
-        .map_err(|e| EcError::DecryptionError(format!("UTF-8 conversion failed: {}", e)))
+        .map_err(|e| EcError::DecryptionError(format!("UTF-8 conversion failed: {e}")))
 }
 
 #[cfg(test)]
