@@ -120,7 +120,11 @@ async fn handle_fetch(
 
         // Extract and save samples with expected answers
         // Split description by parts to extract samples and answers per part
-        let parts: Vec<&str> = description.split("PART 2").collect();
+        // The separator pattern added by fetch_description is: "\n PART N \n" surrounded by "=" lines
+        let part2_separator = " PART 2 ";
+        let part3_separator = " PART 3 ";
+
+        let parts: Vec<&str> = description.split(part2_separator).collect();
         let (part1_html, rest) = if parts.len() > 1 {
             (parts[0], parts[1])
         } else {
@@ -128,7 +132,7 @@ async fn handle_fetch(
         };
 
         let (part2_html, part3_html) = if !rest.is_empty() {
-            let parts3: Vec<&str> = rest.split("PART 3").collect();
+            let parts3: Vec<&str> = rest.split(part3_separator).collect();
             if parts3.len() > 1 {
                 (parts3[0], parts3[1])
             } else {
